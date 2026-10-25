@@ -1,0 +1,30 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { Accounts } from '../accounts.mjs';
+import { Campaign } from '../campaign.mjs';
+const input = (id, token = 'a'.repeat(30)) => ({ id, name: id, server: 'Сервер', token, channel: '123456789012345678', message: id, interval: 60 });
+const flush = () => new Promise(r => setImmediate(r));
+test('accounts have isolated credentials, channels, messages, timers and stop controls', async () => {
+  const requests = [], timers = new Map(); let timerId = 0;
+  const accounts = new Accounts(() => new Campaign({ fetcher: async (url, options) => { requests.push({ url, options }); return { ok: true }; }, schedule: cb => { const id = ++timerId; timers.set(id, cb); return id; }, cancel: id => timers.delete(id) }));
+  const a = input('account-000000001'); const b = { ...input('account-000000002', 'b'.repeat(30)), channel: '987654321098765432', interval: 120 };
+  accounts.start(a, 'owner'); accounts.start(b, 'owner'); await flush();
+  assert.equal(requests.length, 2); assert.ok(requests[0].url.includes(a.channel)); assert.ok(requests[1].url.includes(b.channel));
+  assert.equal(requests[0].options.headers.Authorization, a.token); assert.equal(requests[1].options.headers.Authorization, b.token);
+  assert.equal(JSON.parse(requests[1].options.body).content, b.message); assert.equal(timers.size, 2);
+  assert.throws(() => accounts.start(input('account-000000003'), 'owner'), /уже работает/);
+  assert.throws(() => accounts.act('stop', a.id, 'other'), /другой вкладке/);
+  assert.throws(() => accounts.start(a, 'other'), /другой вкладке/);
+  accounts.act('stop', a.id, 'owner'); assert.equal(accounts.get(a.id).campaign.token, ''); assert.equal(accounts.get(b.id).campaign.running, true); assert.equal(timers.size, 1);
+  assert.ok(!JSON.stringify(accounts.snapshot()).includes(b.token));
+  accounts.act('remove', a.id, 'owner'); assert.equal(accounts.snapshot().accounts.length, 1);
+  accounts.stopAll('other'); assert.equal(accounts.get(b.id).campaign.running, true);
+  accounts.stopAll('owner'); assert.equal(accounts.get(b.id).campaign.token, ''); assert.equal(timers.size, 0);
+  accounts.start(b, 'new-owner'); await flush(); assert.equal(accounts.get(b.id).owner, 'new-owner'); accounts.stopAll();
+});
+test('heartbeat renews only the owning tab and expired accounts stop independently', () => {
+  let now = 0; const accounts = new Accounts(() => new Campaign({ clock: () => now, fetcher: () => new Promise(() => {}) }));
+  accounts.start(input('account-000000001'), 'one'); accounts.start(input('account-000000002', 'b'.repeat(30)), 'two');
+  now = 10000; accounts.heartbeat('one'); now = 16000; accounts.checkLease();
+  assert.equal(accounts.get('account-000000001').campaign.running, true); assert.equal(accounts.get('account-000000002').campaign.running, false); accounts.stopAll();
+});

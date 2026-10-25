@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#070a13">
+<meta name="description" content="Локальная панель TradeDesk для публикации объявлений в Discord с нескольких аккаунтов.">
+<title>TradeDesk — аккаунты</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+<script src="/app.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#accounts">Перейти к аккаунтам</a>
+<header>
+  <a class="brand" href="/">
+    <span class="brand-icon" aria-hidden="true">T↗</span>
+    TradeDesk <span class="tag">LOCAL</span>
+  </a>
+  <button class="quiet" id="help">Как это работает</button>
+</header>
+<main>
+  <div class="heading">
+    <div>
+      <p class="eyebrow">Панель управления / Discord</p>
+      <h1>Ваши аккаунты.<br><span>Каждый в своём ритме.</span></h1>
+      <p class="subtitle">Разные каналы, объявления и расписания — в одном месте.</p>
+    </div>
+    <div class="local-status" data-state="connecting"><i aria-hidden="true"></i><span id="connection" role="status">Подключение…</span></div>
+  </div>
+  <section class="stats" aria-label="Общая статистика">
+    <div><span>Аккаунтов</span><strong id="total">0</strong></div>
+    <div><span>Активных сеансов</span><strong id="active">0</strong></div>
+    <div><span>Отправлено сообщений</span><strong id="sent">0</strong></div>
+  </section>
+  <div class="toolbar">
+    <div>
+      <h2>Аккаунты и объявления</h2>
+      <p class="muted">Каждый сеанс запускается и останавливается независимо.</p>
+    </div>
+    <div class="toolbar-actions">
+      <button class="secondary" id="stop-all">Остановить все</button>
+      <button class="primary" id="add"><span class="plus" aria-hidden="true">+</span>Добавить аккаунт</button>
+    </div>
+  </div>
+  <p id="global-error" role="alert"></p>
+  <div id="accounts" class="accounts"></div>
+  <div class="privacy">
+    <span class="privacy-mark" aria-hidden="true">◇</span>
+    <div>
+      <strong>Токены — только в памяти.</strong>
+      <p>Настройки сохраняются без токенов. Поле токена остаётся заполненным до закрытия приложения или вкладки либо удаления карточки; сервер забывает токен при остановке.</p>
+    </div>
+  </div>
+  <footer><span>TradeDesk <span class="muted">/ локальное рабочее пространство</span></span><span class="muted">Только на этом компьютере</span></footer>
+</main>
+<template id="account-template">
+  <section class="card">
+    <div class="card-head">
+      <div class="identity">
+        <span class="avatar" aria-hidden="true">
+          <img alt="" decoding="async" referrerpolicy="no-referrer">
+          <span class="avatar-fallback">?</span>
+        </span>
+        <div class="identity-copy">
+          <h3 class="account-title"></h3>
+          <div class="account-meta"><span class="state">Не запущен</span><span class="account-handle"></span></div>
+        </div>
+      </div>
+      <button class="quiet danger remove" type="button">Удалить</button>
+    </div>
+    <form>
+      <fieldset>
+        <label data-for="token">Токен пользователя <span class="muted">· не бота</span></label>
+        <div class="input-action">
+          <input data-field="token" type="password" autocomplete="off" spellcheck="false" placeholder="Вставьте токен аккаунта" required minlength="20" maxlength="512">
+          <button class="toggle-token" type="button" aria-label="Показать токен">Показать</button>
+        </div>
+        <p class="hint">Не сохраняется на диск и не попадает в журнал. Остаётся в поле до закрытия приложения или вкладки. Один токен — одна карточка.</p>
+        <p class="auth-status" role="status">Вставьте токен — проверка входа начнётся автоматически.</p>
+        <fieldset class="settings" hidden disabled>
+          <label data-for="channels">ID каналов</label>
+          <textarea data-field="channels" rows="3" placeholder="123456789012345678&#10;987654321098765432" required></textarea>
+          <p class="hint">До 20 ID, каждый с новой строки или через запятую. Каналы могут быть с разных серверов.</p>
+          <label data-for="interval">Кулдаун между отправками, секунды</label>
+          <input data-field="interval" type="number" min="60" max="86400" value="300" required>
+          <p class="hint">Отправка по очереди: один канал за интервал, затем следующий.</p>
+          <div class="label-row">
+            <label data-for="message">Торговое объявление</label>
+            <span class="chars">0 / 2000</span>
+          </div>
+          <textarea data-field="message" rows="4" maxlength="2000" placeholder="Что предлагаете и на что хотите обменять?" required></textarea>
+        </fieldset>
+      </fieldset>
+      <p class="error" role="alert" tabindex="-1"></p>
+      <div class="buttons">
+        <button class="primary start" type="submit" hidden>Запустить отправку</button>
+        <button class="secondary stop" type="button" disabled>Остановить</button>
+      </div>
+      <p class="hint bottom-hint">Первая отправка — сразу после запуска.</p>
+    </form>
+    <div class="session-stats">
+      <span>Отправлено <b class="sent">0</b></span>
+      <span>Следующая <b class="countdown">— : —</b></span>
+    </div>
+    <details>
+      <summary>Журнал событий <span class="log-count">0</span></summary>
+      <div class="journal-head"><span class="muted">Последние 100 событий</span><button class="quiet clear" type="button">Очистить</button></div>
+      <div class="logs" role="log" aria-label="Журнал аккаунта"><p class="empty">Здесь появятся результаты отправки.</p></div>
+    </details>
+  </section>
+</template>
+<dialog id="info">
+  <h2>Как это работает</h2>
+  <p>Вставьте пользовательский токен. После успешной проверки профиля Discord откроются настройки. Укажите до 20 ID каналов, объявление и кулдаун. Запуск сразу отправляет сообщение в первый канал; следующие каналы обходятся по очереди через заданный интервал. У каждого аккаунта своё расписание и журнал.</p>
+  <p>Закрытие приложения или вкладки либо потеря связи останавливает сеансы через 15–17 секунд. Для немедленной остановки используйте кнопку. Уже принятое Discord сообщение отменить нельзя.</p>
+  <button class="primary" id="close-info">Понятно</button>
+</dialog>
+</body>
+</html>

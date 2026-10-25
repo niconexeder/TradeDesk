@@ -1,0 +1,16 @@
+node_modules/
+.env
+.env.*
+.sharrowkin/
+*.log
+dist/
+desktop/bin/
+desktop/obj/
+.claude/
+.superpowers/
+installer/build/
+desktop/*.user
+*.user
+*.suo
+*.tmp
+*.temp
