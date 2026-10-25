@@ -7,6 +7,8 @@ import { Accounts } from './accounts.mjs';
 import { verifyToken } from './auth.mjs';
 import { TokenVault } from './token-store.mjs';
 const files = { '/': ['index.html', 'text/html'], '/app.js': ['app.js', 'text/javascript'], '/style.css': ['style.css', 'text/css'], '/favicon.svg': ['favicon.svg', 'image/svg+xml'] };
+const accountIdPattern = /^[\w-]{16,80}$/;
+const validToken = token => typeof token === 'string' && token.trim().length >= 20 && token.trim().length <= 512 && !/\s/.test(token.trim());
 const appDirectory = dirname(fileURLToPath(import.meta.url));
 const defaultTokenVault = new TokenVault({
   helperPath: process.env.TRADEDESK_TOKEN_HELPER || join(appDirectory, 'tokenstore.exe'),
@@ -44,10 +46,13 @@ export function createApp(accounts = new Accounts(), verifier = verifyToken, tok
         if (typeof client !== 'string' || !/^[\w-]{16,80}$/.test(client)) return json(400, { error: 'Обновите страницу.' });
         if (req.url === '/api/verify') return json(200, { user: await verifier(body.token) });
         if (req.url === '/api/token-save') {
+          if (typeof body.id !== 'string' || !accountIdPattern.test(body.id)) return json(400, { error: 'Укажите ID аккаунта.' });
+          if (!validToken(body.token)) return json(400, { error: 'Введите корректный токен пользователя.' });
           const saved = await tokenVault.set(body.id, body.token);
           return json(200, { saved: saved !== false });
         }
         if (req.url === '/api/token-remove') {
+          if (typeof body.id !== 'string' || !accountIdPattern.test(body.id)) return json(400, { error: 'Укажите ID аккаунта.' });
           const saved = await tokenVault.remove(body.id);
           return json(200, { saved: saved !== false });
         }

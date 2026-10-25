@@ -68,10 +68,11 @@ function addCard(saved = {}) {
   for (const [f, el] of Object.entries(inputs)) {
     el.id = `${id}-${f}`;
     root.querySelector(`[data-for="${f}"]`).htmlFor = el.id;
-    if (f !== 'token' && typeof saved[f] === 'string') el.value = saved[f];
+    if (typeof saved[f] === 'string' && (f !== 'token' || saved[f])) el.value = saved[f];
   }
   if (!inputs.channels.value && typeof saved.channel === 'string') inputs.channels.value = saved.channel;
-  const c = { root, inputs, state: null, busy: false, signature: '', verifiedToken: '', user: null, authVersion: 0 }; cards.set(id, c);
+  const savedToken = typeof saved.token === 'string' ? saved.token.trim() : '';
+  const c = { root, inputs, state: null, busy: false, signature: '', verifiedToken: '', user: null, authVersion: 0, savedToken }; cards.set(id, c);
   const authStatus = root.querySelector('.auth-status');
   const updateLabels = () => {
     root.querySelector('.account-title').textContent = c.user?.displayName || 'Подключение аккаунта';
@@ -84,6 +85,11 @@ function addCard(saved = {}) {
     if (token.length < 20) return null;
     for (const other of cards.values()) if (other !== c && other.inputs.token.value.trim() === token) return other;
     return null;
+  };
+  const forgetToken = () => {
+    if (!c.savedToken) return;
+    c.savedToken = '';
+    api('token-remove', { id }).catch(() => {});
   };
   const refreshToken = () => {
     clearTimeout(c.authTimer);
@@ -117,6 +123,14 @@ function addCard(saved = {}) {
         authStatus.dataset.state = 'ok';
         authStatus.textContent = `Вход выполнен: @${user.username}`;
         root.querySelector('.error').textContent = '';
+        try {
+          const persisted = await api('token-save', { id, token });
+          if (version !== c.authVersion || !cards.has(id)) {
+            api('token-remove', { id }).catch(() => {});
+            return;
+          }
+          if (persisted.saved) c.savedToken = token;
+        } catch {}
       } catch (error) {
         if (version !== c.authVersion || !cards.has(id)) return;
         authStatus.dataset.state = 'error';
@@ -126,7 +140,11 @@ function addCard(saved = {}) {
     }, 800);
   };
   c.refreshToken = refreshToken;
-  inputs.token.addEventListener('input', () => { refreshToken(); refreshDuplicatePeers(c); });
+  inputs.token.addEventListener('input', () => {
+    if (c.savedToken && inputs.token.value.trim() !== c.savedToken) forgetToken();
+    refreshToken();
+    refreshDuplicatePeers(c);
+  });
   root.addEventListener('input', () => { updateLabels(); save(); }); updateLabels();
   root.querySelector('.toggle-token').onclick = e => {
     const show = inputs.token.type === 'password'; inputs.token.type = show ? 'text' : 'password';
@@ -150,6 +168,8 @@ function addCard(saved = {}) {
   root.querySelector('.stop').onclick = () => action('stop', { id });
   root.querySelector('.clear').onclick = () => action('clear', { id });
   const finishRemove = () => {
+    c.savedToken = '';
+    api('token-remove', { id }).catch(() => {});
     cards.delete(id);
     root.remove();
     refreshDuplicatePeers(c);
@@ -176,7 +196,9 @@ function addCard(saved = {}) {
     if (!c.state) { animateRemove(); return; }
     action('remove', { id }, () => { inputs.token.value = ''; animateRemove(); });
   };
-  $('accounts').append(root); renderCard(c); save(); updateTotals(); return c;
+  $('accounts').append(root);
+  if (c.savedToken) refreshToken();
+  renderCard(c); save(); updateTotals(); return c;
 }
 function renderCard(c) {
   const { root, state: s, busy } = c; const running = !!s?.running;
@@ -237,13 +259,31 @@ $('stop-all').onclick = async () => {
   finally { $('stop-all').disabled = false; }
 };
 $('help').onclick = () => $('info').showModal(); $('close-info').onclick = () => $('info').close();
-try {
-  const saved = JSON.parse(localStorage.getItem('tradedesk-accounts') || 'null');
-  if (Array.isArray(saved)) saved.slice(0, 20).forEach(v => { if (v && typeof v === 'object') addCard(v); });
-  else { const legacy = JSON.parse(localStorage.getItem('tradedesk-settings') || 'null'); if (legacy) addCard(legacy); }
-} catch {}
-if (!cards.size) addCard();
-booted = true;
+function savedCards() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('tradedesk-accounts') || 'null');
+    if (Array.isArray(saved)) return saved;
+    const legacy = JSON.parse(localStorage.getItem('tradedesk-settings') || 'null');
+    return legacy ? [legacy] : [];
+  } catch { return []; }
+}
+async function bootCards() {
+  const saved = savedCards();
+  let tokens = {};
+  if (saved.length) {
+    try {
+      const result = await api('tokens');
+      tokens = result.tokens && typeof result.tokens === 'object' ? result.tokens : {};
+    } catch {}
+  }
+  saved.slice(0, 20).forEach(v => {
+    if (!v || typeof v !== 'object') return;
+    const token = typeof v.id === 'string' && typeof tokens[v.id] === 'string' ? tokens[v.id] : '';
+    addCard({ ...v, token });
+  });
+  if (!cards.size) addCard();
+  booted = true;
+}
 async function poll() {
   if (polling) return; polling = true;
   try {
@@ -260,4 +300,5 @@ async function poll() {
   }
   finally { polling = false; }
 }
-setInterval(poll, 2000); setInterval(countdown, 500); poll();
+setInterval(poll, 2000); setInterval(countdown, 500);
+bootCards().finally(() => poll());

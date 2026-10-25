@@ -187,6 +187,14 @@ internal sealed class MainForm : Form
         if (!File.Exists(scriptPath))
             throw new FileNotFoundException("В папке приложения отсутствует app\\server.mjs.");
 
+        var dataDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "TradeDesk",
+            "data");
+        Directory.CreateDirectory(dataDirectory);
+        var tokenFile = Path.Combine(dataDirectory, _debug ? "tokens-debug.dat" : "tokens.dat");
+        var tokenHelper = Path.Combine(appDirectory, "tokenstore.exe");
+
         var startInfo = new ProcessStartInfo
         {
             FileName = nodePath,
@@ -201,6 +209,8 @@ internal sealed class MainForm : Form
         startInfo.ArgumentList.Add(scriptPath);
         startInfo.Environment["PORT"] = ServerPort.ToString();
         startInfo.Environment["TRADEDESK_DESKTOP"] = "1";
+        startInfo.Environment["TRADEDESK_TOKEN_HELPER"] = tokenHelper;
+        startInfo.Environment["TRADEDESK_TOKEN_FILE"] = tokenFile;
 
         var process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
         var result = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);

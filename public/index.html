@@ -49,8 +49,8 @@
   <div class="privacy">
     <span class="privacy-mark" aria-hidden="true">◇</span>
     <div>
-      <strong>Токены — только в памяти.</strong>
-      <p>Настройки сохраняются без токенов. Поле токена остаётся заполненным до закрытия приложения или вкладки либо удаления карточки; сервер забывает токен при остановке.</p>
+      <strong>Токены — под защитой Windows.</strong>
+      <p>В приложении сохраняются зашифрованными для текущего пользователя Windows и не попадают в localStorage или журнал. В режиме браузера остаются только в памяти. Удаление карточки удаляет сохранённый токен.</p>
     </div>
   </div>
   <footer><span>TradeDesk <span class="muted">/ локальное рабочее пространство</span></span><span class="muted">Только на этом компьютере</span></footer>
@@ -77,7 +77,7 @@
           <input data-field="token" type="password" autocomplete="off" spellcheck="false" placeholder="Вставьте токен аккаунта" required minlength="20" maxlength="512">
           <button class="toggle-token" type="button" aria-label="Показать токен">Показать</button>
         </div>
-        <p class="hint">Не сохраняется на диск и не попадает в журнал. Остаётся в поле до закрытия приложения или вкладки. Один токен — одна карточка.</p>
+        <p class="hint">В приложении шифруется Windows DPAPI и не попадает в журнал. Хранится до удаления карточки. Один токен — одна карточка.</p>
         <p class="auth-status" role="status">Вставьте токен — проверка входа начнётся автоматически.</p>
         <fieldset class="settings" hidden disabled>
           <label data-for="channels">ID каналов</label>
