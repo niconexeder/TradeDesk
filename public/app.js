@@ -32,6 +32,33 @@ async function api(path, data) {
   if (!r.ok) throw new Error(body.error || 'Ошибка локального сервера.');
   return body;
 }
+function confirmDelete(c, trigger) {
+  const dialog = $('delete-dialog');
+  const running = !!c.state?.running;
+  const warning = $('delete-warning');
+  $('delete-account').textContent = c.user?.username ? `@${c.user.username}` : 'Новый аккаунт';
+  $('delete-state').textContent = running ? 'Сеанс активен' : 'Сеанс не запущен';
+  $('delete-state').classList.toggle('is-running', running);
+  warning.hidden = !running;
+  warning.textContent = 'Сначала остановим отправку, затем удалим данные. Это действие нельзя отменить.';
+  if (dialog.open) dialog.close('cancel');
+  dialog.returnValue = 'cancel';
+  const returnFocus = trigger instanceof HTMLElement ? trigger : document.activeElement;
+  dialog.showModal();
+  return new Promise(resolve => {
+    const onClose = () => {
+      dialog.removeEventListener('close', onClose);
+      const confirmed = dialog.returnValue === 'confirm';
+      if (!confirmed) {
+        setTimeout(() => {
+          if (returnFocus instanceof HTMLElement && returnFocus.isConnected) returnFocus.focus({ preventScroll: true });
+        }, 0);
+      }
+      resolve(confirmed);
+    };
+    dialog.addEventListener('close', onClose);
+  });
+}
 function avatarInitial(user) {
   return ((user?.displayName || user?.username || '?').trim()[0] || '?').toUpperCase();
 }
@@ -172,6 +199,7 @@ function addCard(saved = {}) {
     api('token-remove', { id }).catch(() => {});
     cards.delete(id);
     root.remove();
+    $('add').focus({ preventScroll: true });
     refreshDuplicatePeers(c);
     save();
     updateTotals();
@@ -191,8 +219,9 @@ function addCard(saved = {}) {
     root.addEventListener('animationend', onEnd);
     setTimeout(finish, 320);
   };
-  root.querySelector('.remove').onclick = () => {
-    if (root.classList.contains('leaving') || !confirm(`Удалить аккаунт и его настройки? Активный сеанс будет остановлен.`)) return;
+  root.querySelector('.remove').onclick = async () => {
+    if (root.classList.contains('leaving') || c.busy) return;
+    if (!await confirmDelete(c, root.querySelector('.remove'))) return;
     if (!c.state) { animateRemove(); return; }
     action('remove', { id }, () => { inputs.token.value = ''; animateRemove(); });
   };

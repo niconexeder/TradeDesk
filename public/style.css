@@ -972,6 +972,155 @@ dialog::backdrop {
   -webkit-backdrop-filter: blur(6px);
 }
 
+.confirm-dialog {
+  position: relative;
+  width: calc(100% - 32px);
+  max-width: 520px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.confirm-dialog::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 2;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(251, 113, 133, 0.72), transparent);
+}
+
+.dialog-body {
+  padding: 28px 28px 22px;
+  background:
+    radial-gradient(420px 220px at 0% 0%, rgba(251, 113, 133, 0.09), transparent 70%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 46%);
+}
+
+.dialog-mark {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 18px;
+  border: 1px solid rgba(251, 113, 133, 0.24);
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(251, 113, 133, 0.17), rgba(251, 113, 133, 0.045));
+  color: var(--error);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 14px 28px -22px rgba(251, 113, 133, 0.8);
+}
+
+.dialog-mark svg {
+  width: 22px;
+  height: 22px;
+}
+
+.dialog-kicker {
+  margin: 0 0 7px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.25px;
+  text-transform: uppercase;
+}
+
+.confirm-dialog h2 {
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: -0.55px;
+}
+
+.confirm-dialog #delete-description {
+  max-width: 43ch;
+  margin: 10px 0 0;
+  color: var(--muted-strong);
+}
+
+.dialog-context {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.dialog-account,
+.dialog-state {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--muted-strong);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dialog-account {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dialog-state::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.dialog-state.is-running {
+  border-color: rgba(110, 231, 183, 0.2);
+  background: rgba(110, 231, 183, 0.07);
+  color: var(--green);
+}
+
+.dialog-state.is-running::before {
+  background: var(--green);
+  box-shadow: 0 0 0 3px rgba(110, 231, 183, 0.1);
+}
+
+.dialog-warning {
+  margin: 14px 0 0;
+  color: var(--warning);
+  font-size: 12px;
+}
+
+.confirm-dialog .dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin: 0;
+  padding: 18px 28px;
+  border-top: 1px solid var(--border);
+  background: rgba(4, 8, 16, 0.34);
+}
+
+.confirm-dialog .dialog-actions button {
+  min-height: 44px;
+}
+
+.dialog-danger {
+  border: 1px solid rgba(251, 113, 133, 0.34);
+  background: rgba(251, 113, 133, 0.13);
+  color: #ffd0d6;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.dialog-danger:hover:not(:disabled) {
+  border-color: rgba(251, 113, 133, 0.48);
+  background: rgba(251, 113, 133, 0.22);
+  box-shadow: 0 14px 26px -18px rgba(251, 113, 133, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.confirm-dialog[open] .dialog-mark {
+  animation: dialog-mark-in 0.38s var(--ease-spring) both;
+}
+
 @keyframes card-in {
   from {
     opacity: 0;
@@ -996,6 +1145,17 @@ dialog::backdrop {
   from {
     opacity: 0;
     transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes dialog-mark-in {
+  from {
+    opacity: 0;
+    transform: scale(0.78) rotate(-7deg);
   }
   to {
     opacity: 1;
@@ -1748,6 +1908,29 @@ dialog::backdrop {
   footer {
     flex-wrap: wrap;
     padding-bottom: 20px;
+  }
+}
+
+@media (max-width: 520px) {
+  .confirm-dialog {
+    width: calc(100% - 24px);
+  }
+
+  .dialog-body {
+    padding: 22px 20px 18px;
+  }
+
+  .confirm-dialog h2 {
+    font-size: 22px;
+  }
+
+  .confirm-dialog .dialog-actions {
+    flex-direction: column;
+    padding: 16px 20px 20px;
+  }
+
+  .confirm-dialog .dialog-actions button {
+    width: 100%;
   }
 }
 
