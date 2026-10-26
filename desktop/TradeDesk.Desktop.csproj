@@ -18,7 +18,7 @@
     <PublishTrimmed>false</PublishTrimmed>
     <PublishReadyToRun>false</PublishReadyToRun>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <AssemblyTitle>TradeDesk</AssemblyTitle>
     <Product>TradeDesk</Product>
     <Company>TradeDesk</Company>

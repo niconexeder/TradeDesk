@@ -70,8 +70,9 @@ const hash = await new Promise((resolveHash, rejectHash) => {
 const notes = [
   `# TradeDesk ${version}`,
   '',
-  'Первый публичный релиз TradeDesk.',
+  'Обновление TradeDesk.',
   '',
+  '- Удаление аккаунта теперь подтверждается собственной адаптивной модальной панелью TradeDesk вместо системного диалога.',
   '- Установка без прав администратора в профиль пользователя.',
   '- Бутстрапер проверяет обновления, запускает приложение и удаляет его.',
   '- Токены Discord сохраняются зашифрованными через Windows DPAPI и не попадают в localStorage.',
@@ -91,7 +92,7 @@ const manifest = {
   sha256: hash,
   size: zipStat.size,
   publishedAt: new Date().toISOString(),
-  notes: `TradeDesk ${version}: установка, обновление и шифрованное хранение токенов.`,
+  notes: `TradeDesk ${version}: кастомное подтверждение удаления и обновление интерфейса.`,
   minBootstrap: '1.0.0'
 };
 writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf8');

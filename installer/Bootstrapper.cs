@@ -19,8 +19,8 @@ using Microsoft.Win32;
 [assembly: AssemblyDescription("Запуск, обновление и удаление TradeDesk")]
 [assembly: AssemblyCompany("TradeDesk")]
 [assembly: AssemblyProduct("TradeDesk")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("1.0.1.0")]
+[assembly: AssemblyFileVersion("1.0.1.0")]
 
 namespace TradeDeskBootstrap
 {
