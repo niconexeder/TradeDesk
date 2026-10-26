@@ -56,7 +56,7 @@
 Нужны Node.js 22+, .NET SDK 8+ и .NET Framework 4.8 `csc.exe` (входит в Windows 10/11).
 
 ```cmd
-node scripts/build-release.mjs 1.0.1
+node scripts/build-release.mjs 1.0.2
 ```
 
 Скрипт собирает приложение, компилирует бутстрапер, создаёт ZIP, `latest.json` и заметки релиза в `dist\`. Для загрузки на GitHub нужны только:

@@ -12,7 +12,7 @@ internal sealed class MainForm : Form
     private const int ServerPort = 47831;
     private readonly bool _debug;
     private readonly WebView2 _webView;
-    private readonly Label _loading;
+    private readonly LoadingView _loading;
     private Process? _server;
     private bool _closing;
     private bool _firstNavigation = true;
@@ -37,23 +37,23 @@ internal sealed class MainForm : Form
         _webView = new WebView2
         {
             Dock = DockStyle.Fill,
-            DefaultBackgroundColor = Color.FromArgb(7, 10, 19)
+            DefaultBackgroundColor = Color.FromArgb(7, 10, 19),
+            Visible = false
         };
         Controls.Add(_webView);
 
-        _loading = new Label
-        {
-            Dock = DockStyle.Fill,
-            BackColor = Color.FromArgb(7, 10, 19),
-            ForeColor = Color.FromArgb(197, 207, 255),
-            Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point),
-            TextAlign = ContentAlignment.MiddleCenter,
-            Text = "Запуск TradeDesk…"
-        };
+        _loading = new LoadingView();
         Controls.Add(_loading);
         _loading.BringToFront();
 
-        Shown += async (_, _) => await StartAsync();
+        Shown += async (_, _) =>
+        {
+            // Let the first animated frame reach the screen before WebView2
+            // performs its synchronous startup work on the UI thread.
+            await Task.Delay(120);
+            if (_closing) return;
+            await StartAsync();
+        };
         FormClosing += (_, _) =>
         {
             _closing = true;
@@ -73,6 +73,7 @@ internal sealed class MainForm : Form
     {
         try
         {
+            if (_closing) return;
             if (!HasWebView2Runtime())
             {
                 ShowWebView2Missing();
@@ -126,6 +127,12 @@ internal sealed class MainForm : Form
         }
     }
 
+    private void ShowWebView()
+    {
+        _webView.Visible = true;
+        _webView.BringToFront();
+    }
+
     private void ConfigureWebView()
     {
         var core = _webView.CoreWebView2;
@@ -152,9 +159,10 @@ internal sealed class MainForm : Form
         core.NavigationCompleted += async (_, e) =>
         {
             if (_closing) return;
-            _loading.Visible = false;
             if (!e.IsSuccess)
             {
+                _loading.Visible = false;
+                ShowWebView();
                 MessageBox.Show(
                     this,
                     $"Не удалось загрузить интерфейс TradeDesk.\n\n{e.WebErrorStatus}",
@@ -163,6 +171,9 @@ internal sealed class MainForm : Form
                     MessageBoxIcon.Error);
                 return;
             }
+
+            ShowWebView();
+            _loading.Visible = false;
             if (!_firstNavigation) return;
             _firstNavigation = false;
             try
